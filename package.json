@@ -1,0 +1,25 @@
+{
+  "name": "debt-manager",
+  "version": "1.0.0",
+  "description": "Application to manage debts between friends",
+  "main": "index.js",
+  "scripts": {
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build": "cd backend && npm run build && cd ../frontend && npm run build",
+    "start:backend": "cd backend && npm start",
+    "start:frontend": "cd frontend && npm run preview",
+    "test": "cd backend && npm test && cd ../frontend && npm test",
+    "test:backend": "cd backend && npm test",
+    "test:frontend": "cd frontend && npm test"
+  },
+  "keywords": ["debt", "manager", "nodejs", "react", "monorepo"],
+  "author": "Juan Campuzano",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "9.2.1"
+  },
+  "workspaces": ["backend", "frontend"]
+}
