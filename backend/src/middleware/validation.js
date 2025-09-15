@@ -95,6 +95,20 @@ const debtValidationSchemas = {
     }),
 };
 
+// Query parameter validation schemas
+const queryValidationSchemas = {
+    debtFilters: Joi.object({
+        status: Joi.string().valid("paid", "pending").optional(),
+        type: Joi.string().valid("owed_to_me", "i_owe").optional(),
+        limit: Joi.number().integer().min(1).max(100).default(50).optional(),
+        offset: Joi.number().integer().min(0).default(0).optional(),
+    }),
+
+    exportFormat: Joi.object({
+        format: Joi.string().valid("json", "csv").default("json").optional(),
+    }),
+};
+
 // Parameter validation schemas
 const paramValidationSchemas = {
     id: Joi.object({
@@ -113,6 +127,9 @@ const validateUserUpdate = validate(userValidationSchemas.updateProfile);
 
 const validateDebtCreation = validate(debtValidationSchemas.create);
 const validateDebtUpdate = validate(debtValidationSchemas.update);
+
+const validateDebtFilters = validate(queryValidationSchemas.debtFilters, "query");
+const validateExportFormat = validate(queryValidationSchemas.exportFormat, "query");
 
 const validateIdParam = validate(paramValidationSchemas.id, "params");
 
@@ -158,10 +175,13 @@ module.exports = {
     validateUserUpdate,
     validateDebtCreation,
     validateDebtUpdate,
+    validateDebtFilters,
+    validateExportFormat,
     validateIdParam,
     validateDebtOwnership,
     sanitizeInput,
     userValidationSchemas,
     debtValidationSchemas,
+    queryValidationSchemas,
     paramValidationSchemas,
 };
