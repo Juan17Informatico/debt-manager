@@ -4,6 +4,13 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 
+const authRoutes = require('./routes/auth.js');
+const debtRoutes = require('./routes/debts.js');
+const userRoutes = require('./routes/users.js');
+
+const { errorHandler } = require('./middleware/errorHandler.js');
+const notFound = require('./middleware/notFound.js');
+
 const { initializeDatabase } = require('./config/database');
 
 const app = express();
@@ -16,7 +23,11 @@ app.use(morgan('combined'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Health Route
+app.use('/api/auth', authRoutes);
+app.use('/api/debts', debtRoutes);
+app.use('/api/users', userRoutes);
+
+// Health route
 app.get('/api/health', (req, res) => {
     res.json({
         status: 'OK',
@@ -24,6 +35,9 @@ app.get('/api/health', (req, res) => {
         environment: process.env.NODE_ENV
     });
 });
+
+app.use(notFound);
+app.use(errorHandler);
 
 const startServer = async () => {
     try {
