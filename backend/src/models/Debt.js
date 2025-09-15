@@ -131,6 +131,66 @@ class Debt {
         return result.rowCount > 0;
     }
 
+    // Additional methods
+
+    static async getAggregations(userId) {
+        const sql = `
+      SELECT 
+        COUNT(CASE WHEN creditor_id = $1 AND is_paid = false THEN 1 END) as pending_debts_to_me,
+        COUNT(CASE WHEN creditor_id = $1 AND is_paid = true THEN 1 END) as paid_debts_to_me,
+        COALESCE(SUM(CASE WHEN creditor_id = $1 AND is_paid = false THEN amount END), 0) as total_owed_to_me,
+        COALESCE(SUM(CASE WHEN creditor_id = $1 AND is_paid = true THEN amount END), 0) as total_paid_to_me,
+        COUNT(CASE WHEN debtor_id = $1 AND is_paid = false THEN 1 END) as pending_debts_i_owe,
+        COUNT(CASE WHEN debtor_id = $1 AND is_paid = true THEN 1 END) as paid_debts_i_owe,
+        COALESCE(SUM(CASE WHEN debtor_id = $1 AND is_paid = false THEN amount END), 0) as total_i_owe,
+        COALESCE(SUM(CASE WHEN debtor_id = $1 AND is_paid = true THEN amount END), 0) as total_i_paid
+      FROM debts WHERE creditor_id = $1 OR debtor_id = $1`;
+
+        const { rows } = await query(sql, [userId]);
+        const s = rows[0];
+
+        return {
+            summary: {
+                totalOwedToMe: Number(s.total_owed_to_me),
+                totalIOwe: Number(s.total_i_owe),
+                netBalance: Number(s.total_owed_to_me) - Number(s.total_i_owe),
+                totalPaidToMe: Number(s.total_paid_to_me),
+                totalIPaid: Number(s.total_i_paid),
+            },
+            counts: {
+                pendingDebtsToMe: Number(s.pending_debts_to_me),
+                paidDebtsToMe: Number(s.paid_debts_to_me),
+                pendingDebtsIOwe: Number(s.pending_debts_i_owe),
+                paidDebtsIOwe: Number(s.paid_debts_i_owe),
+            },
+        };
+    }
+
+    static async exportDebts(userId, format = "json") {
+        const debts = await Debt.findByUserId(userId, { limit: 1000 });
+
+        if (format === "json") {
+            return {
+                exportDate: new Date().toISOString(),
+                userId,
+                totalDebts: debts.length,
+                debts: debts.map((d) => d.toJSON()),
+            };
+        }
+
+        // CSV-like raw data
+        return debts.map((d) => ({
+            id: d.id,
+            type: d.creditorId === userId ? "owed_to_me" : "i_owe",
+            amount: d.amount,
+            description: d.description,
+            otherPerson: d.creditorId === userId ? d.debtor?.name : d.creditor?.name,
+            isPaid: d.isPaid,
+            createdAt: d.createdAt,
+            paidAt: d.paidAt,
+        }));
+    }
+
     toJSON() {
         const {
             id,
